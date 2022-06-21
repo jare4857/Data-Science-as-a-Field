@@ -1,0 +1,81 @@
+---
+title: "Week 3 Project"
+author: "Jacob Reed"
+date: "May 29, 2022"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. Data Import
+
+This is is where I read in the data.
+
+```{r library}
+library(dplyr)
+library(date)
+library(lubridate)
+```
+
+```{r get_data}
+url_in <- "https://data.cityofnewyork.us/api/views/833y-fsy8/rows.csv?accessType=DOWNLOAD"
+
+data <- read.csv(url_in)
+```
+
+## 2. Tidying and Transforming data
+
+This is where I tidy and transform the data to prepare it for analysis.
+
+```{r tidy}
+clean_data <- data %>%
+  mutate(OCCUR_DATE = mdy(OCCUR_DATE)) %>%
+  mutate(OCCUR_TIME = hms(OCCUR_TIME)) %>%
+  select(-c(X_COORD_CD, Y_COORD_CD, Latitude, Longitude, Lon_Lat))
+```
+
+## 3. Analysis and Vizualization
+
+This is where I conduct some analysis of the data as well as visualize some of my findings.
+
+```{r analysis}
+incidents_by_boro <- clean_data %>%
+  group_by(BORO) %>%
+  summarize(count=n())
+
+incidents_by_prec <- clean_data %>%
+  group_by(PRECINCT) %>%
+  summarize(count=n())
+
+incidents_by_date <- clean_data %>%
+  group_by(OCCUR_DATE) %>%
+  summarize(count=n())
+```
+
+```{r visualization}
+barplot(incidents_by_boro$count, names.arg = incidents_by_boro$BORO,xlab="Borough",ylab="Count")
+
+barplot(incidents_by_prec$count, names.arg = incidents_by_prec$PRECINCT,xlab="Precinct",ylab="Count")
+
+barplot(incidents_by_date$count, names.arg = incidents_by_date$OCCUR_DATE,xlab="Date",ylab="Count")
+  
+```
+
+## 4. Model
+
+This is where I create a simple model from the data.
+
+```{r model}
+mod <- lm(count ~ OCCUR_DATE, data = incidents_by_date)
+summary(mod)
+```
+
+## 5. Conlusion and Bias
+
+In this report I have taken a quick dive into the New York Shooting incident data. Through my analyis and visualizations we are able to see that these incidents are not spread uniformly across the Boroughs and Precints of New York. Brooklyn has the highest concentration of them among the Boroughs and there are many precincts that are much higher than the average. This leads to furthur questions to investigate such as these same visualizations but normalized for the population in each area, a dive into the buidling type these incidents occur in and if they are concentrated in specific areas, as well as the demographics and wealth distributions in these areas. Ultimately, there are many more questions to answer than this short report has room for.
+
+As with any data science project there will be sources of bias. For me personally, I expected the incident data to reflect differences is location based on what I knew about New York, hence I pursued visualiztions that broke the data down based on location. There are other potential sources of bias such as how this data was reported and if there was incentive (or disincentives) to report these incidents in different parts of New York on different days, for different individuals. It is impportant to be aware of the context and source of the information.
